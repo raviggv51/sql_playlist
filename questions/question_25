@@ -1,0 +1,41 @@
+-- Meshoo hackerrank SQL test
+-- find how many products fall under customer budget along with the list of product in case of clash choose the less costly product
+
+create table products
+(
+product_id varchar(20) ,
+cost int
+);
+insert into products values ('P1',200),('P2',300),('P3',500),('P4',800);
+
+create table customer_budget
+(
+customer_id int,
+budget int
+);
+
+insert into customer_budget values (100,400),(200,800),(300,1500);
+
+select * from products
+
+select * from customer_budget
+
+select customer_id , GROUP_CONCAT(product_id) as products from
+(select customer_id,budget,product_id,cost,
+sum(cost) over(partition by customer_id order by cost) as running_budget
+from products p, customer_budget c
+order by customer_id, budget) as temp 
+where running_budget <= budget
+group by customer_id
+
+insert into customer_budget values (500,100);
+
+-- in above query if the customer budget less then any product cost then it will not show that customer
+-- to handle that case we can use left join
+
+with product_rn as
+(select *, sum(cost) over(order by cost asc) as running_cost
+from products)
+select customer_id,budget,group_concat(product_id,',') as list_products from customer_budget c left join product_rn p 
+on c.budget >= p.running_cost 
+group by customer_id,budget
